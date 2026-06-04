@@ -2,6 +2,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { ExternalLink, Save, Check } from 'lucide-react'
+import ResetDemoButton from '../ResetDemoButton'
 
 const PAGE_CONFIGS = [
   {
@@ -156,6 +157,7 @@ export default function PagesEditor() {
             </p>
           </div>
           <div className="flex items-center gap-3">
+            <ResetDemoButton />
             <a
               href={config.previewUrl}
               target="_blank"

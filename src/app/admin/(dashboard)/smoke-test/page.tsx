@@ -1,5 +1,6 @@
 import { checkSystemHealth, getDesignSettings, getPageSections, getSiteImages } from '@/lib/cms'
 import { CheckCircle, XCircle, AlertTriangle, ExternalLink } from 'lucide-react'
+import ResetDemoButton from '../ResetDemoButton'
 
 export const dynamic = 'force-dynamic'
 
@@ -159,7 +160,7 @@ export default async function SmokeTestPage() {
       </div>
 
       {/* Gyors navigáció */}
-      <div className="mt-6 flex flex-wrap gap-3">
+      <div className="mt-6 flex flex-wrap gap-3 items-center">
         {[
           { href: '/admin/pages', label: 'Oldalszerkesztő' },
           { href: '/admin/images', label: 'Képkezelő' },
@@ -175,6 +176,7 @@ export default async function SmokeTestPage() {
             {label}
           </a>
         ))}
+        <ResetDemoButton />
       </div>
     </div>
   )
