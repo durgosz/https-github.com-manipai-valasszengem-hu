@@ -23,28 +23,31 @@ const CARD_DEFAULTS = [
     cta: 'Időpontot kérek',
     ctaLink: '/kapcsolat#naptar',
     highlighted: false,
+    priceKey: null,
   },
   {
     title: 'Egyéni önismereti ülés',
     price: 'Érdeklődj',
-    duration: '50-60 perc',
+    duration: '60 perc',
     description:
       'Egyszeri vagy folyamatos önismereti munka, saját tempódban. Az ár az egyeztetés alapján kerül meghatározásra.',
     features: ['Online vagy személyesen', 'Rugalmas időpontfoglalás', 'Teljes titoktartás', 'Nincs minimum ülésszám'],
     cta: 'Árat kérdezem',
     ctaLink: '/kapcsolat',
     highlighted: true,
+    priceKey: 'price_60',
   },
   {
     title: 'Online konzultáció',
     price: 'Egyeztetés alapján',
-    duration: '50-60 perc',
+    duration: '90 perc',
     description:
       'Videóhívás formájában, bárhonnan elérhető. Ugyanolyan intenzitással és figyelemmel, mint a személyes találkozók.',
     features: ['Zoom / Google Meet', 'Kényelmes otthoni környezet', 'Rugalmas időzónák', 'Technikailag segítek'],
     cta: 'Részleteket kérdezem',
     ctaLink: '/kapcsolat',
     highlighted: false,
+    priceKey: 'price_90',
   },
 ]
 
@@ -53,10 +56,12 @@ export default async function ArazasPage() {
 
   const intro = sections.intro || 'Az első egyeztetés minden esetben díjmentes. Az árakról nyíltan, egyeztetés alapján beszélünk.'
   const trustText = sections.trust_text || 'Az első kapcsolatfelvétel nem kötelez semmire. Arra szolgál, hogy megnézzük, tudunk-e együtt dolgozni. Az árakról nyíltan, kényelmetlenség nélkül lehet kérdezni. Ha a feltételek nem felelnek meg, szívesen segítek más lehetőséget találni.'
+  const ctaText = sections.pricing_cta
 
-  const options = CARD_DEFAULTS.map((card, i) => ({
+  const options = CARD_DEFAULTS.map((card) => ({
     ...card,
-    price: sections[`price${i + 1}`] || card.price,
+    price: (card.priceKey && sections[card.priceKey]) || card.price,
+    cta: (card.highlighted && ctaText) ? ctaText : card.cta,
   }))
 
   return (

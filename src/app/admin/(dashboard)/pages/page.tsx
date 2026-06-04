@@ -50,9 +50,9 @@ const PAGE_CONFIGS = [
     previewUrl: '/arazas',
     fields: [
       { key: 'intro', label: 'Bevezető szöveg', type: 'textarea' },
-      { key: 'price1', label: 'Ismerkedő ülés ára', type: 'text' },
-      { key: 'price2', label: 'Egyéni ülés ára', type: 'text' },
-      { key: 'price3', label: 'Online ülés ára', type: 'text' },
+      { key: 'price_60', label: '60 perces ülés ára', type: 'text' },
+      { key: 'price_90', label: '90 perces ülés ára', type: 'text' },
+      { key: 'pricing_cta', label: 'CTA gomb szöveg', type: 'text' },
       { key: 'trust_text', label: 'Bizalmi szöveg', type: 'textarea' },
     ],
   },
