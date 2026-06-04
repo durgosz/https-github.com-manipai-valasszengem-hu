@@ -1,5 +1,3 @@
-'use client'
-
 import Link from 'next/link'
 import type { LucideIcon } from 'lucide-react'
 
@@ -14,16 +12,10 @@ export default function AdminModuleCard({ href, icon: Icon, label, desc }: Props
   return (
     <Link
       href={href}
-      className="p-6 rounded-xl transition-all block"
+      className="p-6 rounded-xl transition-colors duration-200 block hover:[border-color:rgba(201,169,110,0.2)]"
       style={{
         backgroundColor: '#141414',
         border: '1px solid rgba(255,255,255,0.06)',
-      }}
-      onMouseEnter={(e) => {
-        (e.currentTarget as HTMLElement).style.borderColor = 'rgba(201,169,110,0.2)'
-      }}
-      onMouseLeave={(e) => {
-        (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.06)'
       }}
     >
       <div
