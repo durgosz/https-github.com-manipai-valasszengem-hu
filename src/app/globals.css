@@ -1,0 +1,175 @@
+@import "tailwindcss";
+
+@theme {
+  /* Colors */
+  --color-background: #0a0a0a;
+  --color-surface: #141414;
+  --color-surface-elevated: #1e1e1e;
+  --color-border-subtle: rgba(255, 255, 255, 0.06);
+  --color-gold: #C9A96E;
+  --color-gold-light: #E8D5A3;
+  --color-gold-dark: #9A7A4A;
+  --color-gold-muted: rgba(201, 169, 110, 0.08);
+  --color-text-primary: #F0EDE5;
+  --color-text-secondary: #9A9688;
+  --color-text-muted: #5A5850;
+
+  /* Fonts */
+  --font-serif: var(--font-cormorant), 'Cormorant Garamond', Georgia, serif;
+  --font-sans: var(--font-inter), 'Inter', system-ui, sans-serif;
+
+  /* Animations */
+  --animate-glow-pulse: glowPulse 4s ease-in-out infinite;
+  --animate-fade-up: fadeUp 0.7s ease-out both;
+  --animate-fade-in: fadeIn 0.5s ease-out both;
+
+  @keyframes glowPulse {
+    0%, 100% { opacity: 0.25; }
+    50% { opacity: 0.55; }
+  }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(30px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background-color: #0a0a0a;
+  color: #F0EDE5;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
+}
+
+/* Focus-visible: minden interaktív elemre egységes */
+:focus-visible {
+  outline: 2px solid #D4A24C;
+  outline-offset: 2px;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+  width: 5px;
+}
+::-webkit-scrollbar-track {
+  background: #0a0a0a;
+}
+::-webkit-scrollbar-thumb {
+  background: #2a2a2a;
+  border-radius: 99px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(201, 169, 110, 0.3);
+}
+
+/* Gold gradient text utility */
+.text-gradient-gold {
+  background: linear-gradient(135deg, var(--color-gold) 0%, #E8D5A3 50%, var(--color-gold) 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+}
+
+/* Gold border gradient */
+.border-gradient-gold {
+  border: 1px solid transparent;
+  background-clip: padding-box;
+  position: relative;
+}
+.border-gradient-gold::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  margin: -1px;
+  border-radius: inherit;
+  background: linear-gradient(135deg, rgba(201,169,110,0.4), rgba(201,169,110,0.1));
+}
+
+/* Grain overlay */
+.grain-overlay::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* Section padding utility */
+.section-padding {
+  padding-top: 6rem;
+  padding-bottom: 6rem;
+}
+
+@media (min-width: 768px) {
+  .section-padding {
+    padding-top: 8rem;
+    padding-bottom: 8rem;
+  }
+}
+
+/* Hero – responsive typography */
+.hero-h1 {
+  font-size: clamp(36px, 11vw, 48px);
+  line-height: 1.1;
+}
+@media (min-width: 768px) {
+  .hero-h1 {
+    font-size: clamp(48px, 5vw, 86px);
+    line-height: 1.08;
+  }
+}
+
+.hero-subtitle {
+  font-size: 18px;
+  line-height: 1.5;
+  color: #C8C4B8;
+}
+@media (min-width: 768px) {
+  .hero-subtitle {
+    font-size: clamp(20px, 1.6vw, 28px);
+    line-height: 1.5;
+    color: #9A9688;
+  }
+}
+
+/* Rólam oldal — responsive háttérkép pozíció */
+.rolam-bg {
+  background-position: 28% center;
+}
+@media (min-width: 1024px) {
+  .rolam-bg {
+    background-position: 22% center;
+  }
+}
+
+/* Rólam oldal — responsive törzsszöveg */
+.rolam-body {
+  font-size: 16px;
+  line-height: 1.75;
+  color: #9A9688;
+}
+@media (min-width: 1024px) {
+  .rolam-body {
+    font-size: 18px;
+    line-height: 1.85;
+  }
+}
