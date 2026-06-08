@@ -129,22 +129,27 @@ export async function POST(request: NextRequest) {
   }
 
   // Send lead to CentralAI CRM
-  try {
-    await fetch('https://centralai-liard.vercel.app/api/webhook/contact', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-webhook-secret': '7ksmDl3qDLl3X-8F41qQGNaHHxvdrrj6',
-      },
-      body: JSON.stringify({
-        name: name.trim(),
-        email: email.trim(),
-        phone: phone?.trim() || '',
-        message: message.trim(),
-      }),
-    })
-  } catch (err) {
-    console.error('[CentralAI webhook error]', err)
+  const webhookSecret = process.env.CENTRALAI_WEBHOOK_SECRET
+  if (!webhookSecret) {
+    console.error('[CentralAI] CENTRALAI_WEBHOOK_SECRET nincs beállítva')
+  } else {
+    try {
+      await fetch('https://centralai-liard.vercel.app/api/webhook/contact', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-webhook-secret': webhookSecret,
+        },
+        body: JSON.stringify({
+          name: name.trim(),
+          email: email.trim(),
+          phone: phone?.trim() || '',
+          message: message.trim(),
+        }),
+      })
+    } catch (err) {
+      console.error('[CentralAI webhook error]', err)
+    }
   }
 
   // Send emails via Resend
@@ -159,7 +164,7 @@ export async function POST(request: NextRequest) {
       }),
       resend.emails.send({
         from: 'válassz engem <hello@valasszengem.hu>',
-        to: ['sz.durgo@gmail.com'],
+        to: [process.env.ADMIN_NOTIFICATION_EMAIL ?? 'sz.durgo@gmail.com'],
         replyTo: email.trim(),
         subject: `Új érdeklődő – ${name.trim()}`,
         html: adminNotificationHtml({ name, email, phone, message, preferredTime }),

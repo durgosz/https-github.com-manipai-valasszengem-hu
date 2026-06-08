@@ -12,7 +12,7 @@ function Row({ label, value, status }: { label: string; value: string; status: S
     missing: { bg: 'rgba(201,169,110,0.08)', text: '#C9A96E', border: 'rgba(201,169,110,0.2)' },
     error:   { bg: 'rgba(239,68,68,0.08)',   text: '#f87171', border: 'rgba(239,68,68,0.2)' },
   }
-  const labels = { ok: 'MŰKÖDIK', missing: 'HIÁNYZÓ TARTALOM', error: 'HIBA' }
+  const labels = { ok: 'MŰKÖDIK', missing: 'HIÁNYZIK', error: 'HIBA' }
   const icons  = {
     ok:      <CheckCircle   size={16} style={{ color: '#4ade80' }} />,
     missing: <AlertTriangle size={16} style={{ color: '#C9A96E' }} />,
@@ -42,6 +42,27 @@ function Row({ label, value, status }: { label: string; value: string; status: S
   )
 }
 
+function SectionTitle({ children }: { children: React.ReactNode }) {
+  return (
+    <h2 className="text-xs tracking-widest uppercase font-medium mt-8 mb-3" style={{ color: '#5A5850' }}>
+      {children}
+    </h2>
+  )
+}
+
+function envStatus(key: string): Status {
+  return process.env[key] ? 'ok' : 'error'
+}
+
+function envValue(key: string): string {
+  const v = process.env[key]
+  if (!v) return ''
+  if (key.includes('KEY') || key.includes('SECRET') || key.includes('ROLE')) {
+    return v.slice(0, 8) + '••••••••'
+  }
+  return v.length > 60 ? v.slice(0, 60) + '…' : v
+}
+
 export default async function SmokeTestPage() {
   const [systemOk, design, home, about, images] = await Promise.all([
     checkSystemHealth(),
@@ -56,24 +77,42 @@ export default async function SmokeTestPage() {
     return 'ok'
   }
 
-  const checks: { label: string; value: string; status: Status }[] = [
+  const cmsChecks: { label: string; value: string; status: Status }[] = [
     { label: 'Hero cím (pages.home → hero_title)',      value: home.hero_title ?? '',   status: contentStatus(home.hero_title) },
     { label: 'Hero alcím (pages.home → hero_subtitle)', value: home.hero_subtitle ?? '', status: contentStatus(home.hero_subtitle) },
     { label: 'Hero CTA (pages.home → hero_cta)',        value: home.hero_cta ?? '',      status: contentStatus(home.hero_cta) },
     { label: 'CTA szöveg (design_settings → cta_text)', value: design.cta_text,          status: design.cta_text ? 'ok' : (systemOk ? 'missing' : 'error') },
     { label: 'Fő szín (design_settings → primary_color)', value: design.primary_color,   status: design.primary_color ? 'ok' : (systemOk ? 'missing' : 'error') },
-    { label: 'Hero overlay (design_settings → hero_overlay)', value: `${design.hero_overlay}%`, status: design.hero_overlay !== null ? 'ok' : (systemOk ? 'missing' : 'error') },
-    { label: 'Hero kép (site_images → hero)',           value: images['hero'] ?? '',      status: contentStatus(images['hero']) },
-    { label: 'Rólam kép (site_images → about)',         value: images['about'] ?? '',     status: contentStatus(images['about']) },
-    { label: 'Blog kép (site_images → blog-default)',   value: images['blog-default'] ?? '', status: contentStatus(images['blog-default']) },
+    { label: 'Hero overlay (design_settings)',           value: `${design.hero_overlay}%`, status: design.hero_overlay !== null ? 'ok' : (systemOk ? 'missing' : 'error') },
+    { label: 'Hero kép (site_images → hero)',           value: images['hero']?.url ?? '',          status: contentStatus(images['hero']?.url) },
+    { label: 'Rólam kép (site_images → about)',         value: images['about']?.url ?? '',         status: contentStatus(images['about']?.url) },
+    { label: 'Blog kép (site_images → blog-default)',   value: images['blog-default']?.url ?? '',  status: contentStatus(images['blog-default']?.url) },
     { label: 'Rólam főszöveg (pages.about → bio_main)', value: (about.bio_main ?? '').slice(0, 80) + ((about.bio_main?.length ?? 0) > 80 ? '…' : ''), status: contentStatus(about.bio_main) },
     { label: 'Rólam témák (pages.about → topics)',      value: (about.topics ?? '').slice(0, 80) + ((about.topics?.length ?? 0) > 80 ? '…' : ''),    status: contentStatus(about.topics) },
   ]
 
-  const okCount      = checks.filter((c) => c.status === 'ok').length
-  const missingCount = checks.filter((c) => c.status === 'missing').length
-  const errorCount   = checks.filter((c) => c.status === 'error').length
-  const total        = checks.length
+  const envChecks: { label: string; value: string; status: Status }[] = [
+    { label: 'NEXT_PUBLIC_SUPABASE_URL',  value: envValue('NEXT_PUBLIC_SUPABASE_URL'),  status: envStatus('NEXT_PUBLIC_SUPABASE_URL') },
+    { label: 'NEXT_PUBLIC_SUPABASE_ANON_KEY', value: envValue('NEXT_PUBLIC_SUPABASE_ANON_KEY'), status: envStatus('NEXT_PUBLIC_SUPABASE_ANON_KEY') },
+    { label: 'SUPABASE_SERVICE_ROLE_KEY', value: envValue('SUPABASE_SERVICE_ROLE_KEY'), status: envStatus('SUPABASE_SERVICE_ROLE_KEY') },
+    { label: 'ADMIN_EMAILS',              value: envValue('ADMIN_EMAILS'),              status: envStatus('ADMIN_EMAILS') },
+    { label: 'RESEND_API_KEY',            value: envValue('RESEND_API_KEY'),            status: envStatus('RESEND_API_KEY') },
+    { label: 'ANTHROPIC_API_KEY',         value: envValue('ANTHROPIC_API_KEY'),         status: envStatus('ANTHROPIC_API_KEY') },
+    { label: 'CENTRALAI_WEBHOOK_SECRET',  value: envValue('CENTRALAI_WEBHOOK_SECRET'),  status: process.env.CENTRALAI_WEBHOOK_SECRET ? 'ok' : 'missing' },
+    {
+      label: 'ADMIN_2FA_BYPASS (production-ban legyen üres)',
+      value: process.env.ADMIN_2FA_BYPASS
+        ? (process.env.NODE_ENV === 'production' ? 'beállítva, de PRODUCTION-ban INAKTÍV ✓' : `${process.env.ADMIN_2FA_BYPASS} (dev bypass aktív)`)
+        : 'nincs beállítva',
+      status: process.env.ADMIN_2FA_BYPASS && process.env.NODE_ENV === 'production' ? 'missing' : 'ok',
+    },
+  ]
+
+  const allChecks = [...cmsChecks, ...envChecks]
+  const okCount      = allChecks.filter((c) => c.status === 'ok').length
+  const missingCount = allChecks.filter((c) => c.status === 'missing').length
+  const errorCount   = allChecks.filter((c) => c.status === 'error').length
+  const cmsTotal     = cmsChecks.length
 
   return (
     <div className="p-6 md:p-10 max-w-3xl">
@@ -85,12 +124,12 @@ export default async function SmokeTestPage() {
           <span
             className="text-sm px-3 py-1 rounded-full font-medium"
             style={{
-              backgroundColor: okCount === total ? 'rgba(34,197,94,0.1)' : 'rgba(201,169,110,0.1)',
-              color: okCount === total ? '#4ade80' : '#C9A96E',
-              border: okCount === total ? '1px solid rgba(34,197,94,0.2)' : '1px solid rgba(201,169,110,0.2)',
+              backgroundColor: errorCount === 0 ? 'rgba(34,197,94,0.1)' : 'rgba(239,68,68,0.1)',
+              color: errorCount === 0 ? '#4ade80' : '#f87171',
+              border: errorCount === 0 ? '1px solid rgba(34,197,94,0.2)' : '1px solid rgba(239,68,68,0.2)',
             }}
           >
-            {okCount}/{total} mező beállítva
+            {okCount}/{allChecks.length} OK
           </span>
           {!systemOk && (
             <span
@@ -106,36 +145,45 @@ export default async function SmokeTestPage() {
           )}
         </div>
         <p className="text-sm" style={{ color: '#9A9688' }}>
-          Minden beállított érték megjelenik a publikus oldalon (60 másodpercen belül).
+          Rendszer, env változók és CMS tartalom állapota egy helyen.
         </p>
       </div>
 
       {/* Jelmagyarázat */}
       <div
-        className="mb-6 p-4 rounded-xl flex flex-wrap gap-4 text-xs"
+        className="mb-4 p-4 rounded-xl flex flex-wrap gap-4 text-xs"
         style={{ backgroundColor: '#0d0d0d', border: '1px solid rgba(255,255,255,0.06)' }}
       >
         <span className="flex items-center gap-1.5" style={{ color: '#4ade80' }}>
-          <CheckCircle size={12} /> MŰKÖDIK — adat be van állítva
+          <CheckCircle size={12} /> MŰKÖDIK
         </span>
         <span className="flex items-center gap-1.5" style={{ color: '#C9A96E' }}>
-          <AlertTriangle size={12} /> HIÁNYZÓ TARTALOM — rendszer OK, tartalom nincs feltöltve
+          <AlertTriangle size={12} /> HIÁNYZIK — opcionális vagy feltölthető
         </span>
         <span className="flex items-center gap-1.5" style={{ color: '#f87171' }}>
-          <XCircle size={12} /> HIBA — Supabase kapcsolati hiba
+          <XCircle size={12} /> HIBA — kötelező, élesítés előtt javítandó
         </span>
       </div>
 
-      {/* Checks */}
-      <div className="space-y-3">
-        {checks.map((check) => (
+      {/* ENV ellenőrzés */}
+      <SectionTitle>Környezeti változók (env)</SectionTitle>
+      <div className="space-y-2">
+        {envChecks.map((check) => (
+          <Row key={check.label} label={check.label} value={check.value} status={check.status} />
+        ))}
+      </div>
+
+      {/* CMS tartalom */}
+      <SectionTitle>CMS tartalom ({cmsChecks.filter(c => c.status === 'ok').length}/{cmsTotal} beállítva)</SectionTitle>
+      <div className="space-y-2">
+        {cmsChecks.map((check) => (
           <Row key={check.label} label={check.label} value={check.value} status={check.status} />
         ))}
       </div>
 
       {/* Összefoglaló */}
       <div
-        className="mt-8 p-5 rounded-xl text-sm space-y-1"
+        className="mt-8 p-5 rounded-xl text-sm space-y-2"
         style={{
           backgroundColor: 'rgba(255,255,255,0.02)',
           border: '1px solid rgba(255,255,255,0.06)',
@@ -143,18 +191,18 @@ export default async function SmokeTestPage() {
         }}
       >
         {errorCount > 0 && (
-          <p><strong style={{ color: '#f87171' }}>{errorCount} HIBA</strong> — Supabase kapcsolat nem működik. Ellenőrizd az env változókat.</p>
+          <p><strong style={{ color: '#f87171' }}>{errorCount} kritikus hiba</strong> — élesítés ELŐTT javítandó. Ellenőrizd az env változókat Vercelben.</p>
         )}
-        {missingCount > 0 && (
-          <p><strong style={{ color: '#C9A96E' }}>{missingCount} hiányzó tartalom</strong> — A rendszer működik, töltsd fel a hiányzó képeket és szövegeket az adminban.</p>
+        {missingCount > 0 && errorCount === 0 && (
+          <p><strong style={{ color: '#C9A96E' }}>{missingCount} hiányzó érték</strong> — rendszer működik, de nem teljes. Töltsd fel a hiányzó tartalmakat.</p>
         )}
-        {okCount === total && (
-          <p><strong style={{ color: '#4ade80' }}>Minden CMS mező be van állítva.</strong> A publikus oldalak az adminból kapják a tartalmat.</p>
+        {errorCount === 0 && missingCount === 0 && (
+          <p><strong style={{ color: '#4ade80' }}>✓ Minden OK.</strong> Az oldal élesítésre kész.</p>
         )}
-        {okCount > 0 && okCount < total && errorCount === 0 && (
+        {errorCount === 0 && missingCount > 0 && (
           <p style={{ color: '#5A5850' }}>
-            Hiányzó képek: <strong style={{ color: '#F0EDE5' }}>Admin → Képkezelő</strong> &nbsp;|&nbsp;
-            Hiányzó szövegek: <strong style={{ color: '#F0EDE5' }}>Admin → Oldalak → Rólam</strong>
+            Képek: <strong style={{ color: '#F0EDE5' }}>Admin → Képkezelő</strong> &nbsp;|&nbsp;
+            Szövegek: <strong style={{ color: '#F0EDE5' }}>Admin → Oldalak</strong>
           </p>
         )}
       </div>
@@ -165,6 +213,7 @@ export default async function SmokeTestPage() {
           { href: '/admin/pages', label: 'Oldalszerkesztő' },
           { href: '/admin/images', label: 'Képkezelő' },
           { href: '/admin/design', label: 'Design beállítások' },
+          { href: '/admin/mfa-setup', label: '2FA beállítás' },
         ].map(({ href, label }) => (
           <a
             key={href}

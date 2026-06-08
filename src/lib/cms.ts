@@ -6,7 +6,15 @@ export interface DesignSettings {
   cta_text: string
 }
 
-export type SiteImages = Record<string, string>
+export interface SiteImageMeta {
+  url: string
+  position_x: string
+  position_y: string
+  object_fit: string
+  alt_text: string
+  zoom: number
+}
+export type SiteImages = Record<string, SiteImageMeta>
 
 const REVALIDATE = 60
 
@@ -17,9 +25,13 @@ const DESIGN_DEFAULTS: DesignSettings = {
 }
 
 function getConfig() {
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
+  if (!process.env.SUPABASE_SERVICE_ROLE_KEY && process.env.NODE_ENV === 'production') {
+    console.warn('[cms] SUPABASE_SERVICE_ROLE_KEY hiányzik – anon kulcsot használ (korlátozott RLS)')
+  }
   return {
     url: process.env.NEXT_PUBLIC_SUPABASE_URL ?? '',
-    key: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? '',
+    key,
   }
 }
 
@@ -84,21 +96,58 @@ export async function checkSystemHealth(): Promise<boolean> {
   }
 }
 
+function toSiteImages(
+  data: { id: string; public_url: string; position_x?: string | null; position_y?: string | null; object_fit?: string | null; alt_text?: string | null; zoom?: number | null }[]
+): SiteImages {
+  return Object.fromEntries(
+    data.map(({ id, public_url, position_x, position_y, object_fit, alt_text, zoom }) => [
+      id,
+      {
+        url: public_url,
+        position_x: position_x ?? '50%',
+        position_y: position_y ?? '50%',
+        object_fit: object_fit ?? 'cover',
+        alt_text: alt_text ?? '',
+        zoom: zoom ?? 100,
+      },
+    ])
+  )
+}
+
 export async function getSiteImages(): Promise<SiteImages> {
   const { url, key } = getConfig()
   if (!url || !key) return {}
+  const headers = { apikey: key, Authorization: `Bearer ${key}` }
   try {
     const res = await fetch(
-      `${url}/rest/v1/site_images?select=id,public_url`,
-      {
-        headers: { apikey: key, Authorization: `Bearer ${key}` },
-        next: { revalidate: REVALIDATE },
-      }
+      `${url}/rest/v1/site_images?select=id,public_url,position_x,position_y,object_fit,alt_text,zoom`,
+      // cache: 'no-store' – a fetch-szintű cache-t kikapcsoljuk.
+      // Az oldal ISR (revalidate = 60) + revalidatePath vezérli a render-t,
+      // nem a fetch cache, amely Next.js 16-ban megváltozott API-val nem invalidálódik megbízhatóan.
+      { headers, cache: 'no-store' }
     )
-    if (!res.ok) return {}
-    const data: { id: string; public_url: string }[] = await res.json()
-    return Object.fromEntries(data.map(({ id, public_url }) => [id, public_url]))
-  } catch {
+    if (res.ok) {
+      const data = await res.json()
+      const aboutRow = data.find((r: { id: string }) => r.id === 'about')
+      console.log('[getSiteImages] OK – about.public_url:', aboutRow?.public_url ?? '(nincs)')
+      return toSiteImages(data)
+    }
+    // Fallback: ha az oszlopok még nem léteznek az adatbázisban
+    console.warn('[getSiteImages] teljes lekérdezés sikertelen (HTTP', res.status, ') – fallback: csak public_url')
+    const fallback = await fetch(
+      `${url}/rest/v1/site_images?select=id,public_url`,
+      { headers, cache: 'no-store' }
+    )
+    if (!fallback.ok) {
+      console.error('[getSiteImages] fallback is sikertelen (HTTP', fallback.status, ')')
+      return {}
+    }
+    const fallbackData = await fallback.json()
+    const aboutFallback = fallbackData.find((r: { id: string }) => r.id === 'about')
+    console.warn('[getSiteImages] fallback OK – about.public_url:', aboutFallback?.public_url ?? '(nincs)')
+    return toSiteImages(fallbackData)
+  } catch (e) {
+    console.error('[getSiteImages] kivétel:', e)
     return {}
   }
 }
