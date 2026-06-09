@@ -23,7 +23,10 @@ export default async function HomePage() {
         title={sections.hero_title}
         subtitle={sections.hero_subtitle}
         ctaText={sections.hero_cta || design.cta_text}
-        bgImage={images['hero']}
+        bgImage={images['hero']?.url}
+        bgObjectFit={images['hero']?.object_fit}
+        bgObjectPosition={images['hero'] ? `${images['hero'].position_x} ${images['hero'].position_y}` : undefined}
+        bgZoom={images['hero']?.zoom}
         overlayOpacity={design.hero_overlay}
       />
       <AboutPreview text={sections.about_preview} />
