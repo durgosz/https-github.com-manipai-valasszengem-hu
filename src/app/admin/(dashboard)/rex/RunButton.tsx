@@ -2,34 +2,77 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { CheckCircle, XCircle, Loader2, Play } from 'lucide-react'
+import { CheckCircle, XCircle, Loader2, Play, MinusCircle, Rocket, ShieldAlert, AlertTriangle } from 'lucide-react'
 
-type CmdResult = { stdout: string; stderr: string; ok: boolean; ms: number }
-type RunResult = { status: 'pass' | 'fail'; duration_ms: number; typecheck: CmdResult; build: CmdResult }
+type CmdResult  = { stdout: string; stderr: string; ok: boolean; ms: number }
+type LintStatus = 'pass' | 'fail' | 'skipped'
+type Summary    = 'READY_TO_DEPLOY' | 'BLOCKED' | 'WARNING'
 
-const COMMANDS: { key: keyof RunResult; label: string }[] = [
-  { key: 'typecheck', label: 'npm run typecheck' },
-  { key: 'build',    label: 'npm run build' },
-]
+type RunResult = {
+  summary:     Summary
+  duration_ms: number
+  typecheck:   CmdResult
+  lint:        CmdResult
+  lintStatus:  LintStatus
+  build:       CmdResult
+}
 
-function CmdBlock({ label, result }: { label: string; result: CmdResult }) {
+const SUMMARY_STYLE: Record<Summary, { bg: string; border: string; color: string; icon: React.ReactNode; label: string }> = {
+  READY_TO_DEPLOY: {
+    bg:     'rgba(34,197,94,0.08)',
+    border: 'rgba(34,197,94,0.25)',
+    color:  '#4ade80',
+    icon:   <Rocket size={18} />,
+    label:  'READY TO DEPLOY',
+  },
+  BLOCKED: {
+    bg:     'rgba(239,68,68,0.08)',
+    border: 'rgba(239,68,68,0.25)',
+    color:  '#f87171',
+    icon:   <ShieldAlert size={18} />,
+    label:  'BLOCKED',
+  },
+  WARNING: {
+    bg:     'rgba(251,191,36,0.08)',
+    border: 'rgba(251,191,36,0.25)',
+    color:  '#fbbf24',
+    icon:   <AlertTriangle size={18} />,
+    label:  'WARNING',
+  },
+}
+
+function stepStatus(ok: boolean): { color: string; icon: React.ReactNode; label: string } {
+  return ok
+    ? { color: '#4ade80', icon: <CheckCircle size={14} />, label: 'PASS' }
+    : { color: '#f87171', icon: <XCircle     size={14} />, label: 'FAIL' }
+}
+
+function lintStepStatus(ls: LintStatus): { color: string; icon: React.ReactNode; label: string } {
+  if (ls === 'pass')    return { color: '#4ade80', icon: <CheckCircle  size={14} />, label: 'PASS' }
+  if (ls === 'fail')    return { color: '#f87171', icon: <XCircle      size={14} />, label: 'FAIL' }
+  return                       { color: '#9A9688', icon: <MinusCircle  size={14} />, label: 'SKIPPED' }
+}
+
+function CmdBlock({
+  label,
+  result,
+  status,
+}: {
+  label:  string
+  result: CmdResult
+  status: { color: string; icon: React.ReactNode; label: string }
+}) {
   const output = [result.stderr, result.stdout].filter(Boolean).join('\n').trim()
   return (
     <div className="rounded-lg overflow-hidden" style={{ border: '1px solid rgba(255,255,255,0.06)' }}>
       <div className="flex items-center gap-3 px-4 py-2.5" style={{ backgroundColor: '#141414' }}>
-        {result.ok
-          ? <CheckCircle size={14} style={{ color: '#4ade80' }} />
-          : <XCircle    size={14} style={{ color: '#f87171' }} />
-        }
+        <span style={{ color: status.color }}>{status.icon}</span>
         <span className="text-sm font-mono" style={{ color: '#F0EDE5' }}>{label}</span>
         <span
           className="ml-auto text-xs px-2 py-0.5 rounded-full"
-          style={{
-            backgroundColor: result.ok ? 'rgba(34,197,94,0.1)' : 'rgba(239,68,68,0.1)',
-            color: result.ok ? '#4ade80' : '#f87171',
-          }}
+          style={{ backgroundColor: `${status.color}1a`, color: status.color }}
         >
-          {result.ok ? 'PASS' : 'FAIL'} · {(result.ms / 1000).toFixed(1)}s
+          {status.label}{result.ms > 0 ? ` · ${(result.ms / 1000).toFixed(1)}s` : ''}
         </span>
       </div>
       {output && (
@@ -37,7 +80,7 @@ function CmdBlock({ label, result }: { label: string; result: CmdResult }) {
           className="p-4 text-xs overflow-x-auto overflow-y-auto"
           style={{
             backgroundColor: '#0a0a0a',
-            color: result.ok ? '#9A9688' : '#f87171',
+            color: status.label === 'PASS' ? '#9A9688' : status.color,
             fontFamily: 'monospace',
             whiteSpace: 'pre-wrap',
             wordBreak: 'break-all',
@@ -52,10 +95,10 @@ function CmdBlock({ label, result }: { label: string; result: CmdResult }) {
 }
 
 export default function RunButton() {
-  const router = useRouter()
+  const router  = useRouter()
   const [loading, setLoading] = useState(false)
-  const [result, setResult] = useState<RunResult | null>(null)
-  const [error, setError] = useState<string | null>(null)
+  const [result,  setResult]  = useState<RunResult | null>(null)
+  const [error,   setError]   = useState<string | null>(null)
 
   async function handleRun() {
     setLoading(true)
@@ -77,6 +120,8 @@ export default function RunButton() {
     }
   }
 
+  const s = result ? SUMMARY_STYLE[result.summary] : null
+
   return (
     <div className="space-y-4">
       <div className="flex items-center gap-4">
@@ -91,7 +136,7 @@ export default function RunButton() {
         </button>
         {loading && (
           <span className="text-xs" style={{ color: '#5A5850' }}>
-            typecheck + build – akár 2-3 perc is lehet
+            typecheck → lint → build (2-4 perc)
           </span>
         )}
       </div>
@@ -105,30 +150,42 @@ export default function RunButton() {
         </div>
       )}
 
-      {result && (
+      {result && s && (
         <div className="space-y-3">
+          {/* Összesített státusz */}
           <div
             className="flex items-center gap-3 p-4 rounded-lg"
-            style={{
-              backgroundColor: result.status === 'pass' ? 'rgba(34,197,94,0.08)' : 'rgba(239,68,68,0.08)',
-              border: `1px solid ${result.status === 'pass' ? 'rgba(34,197,94,0.2)' : 'rgba(239,68,68,0.2)'}`,
-            }}
+            style={{ backgroundColor: s.bg, border: `1px solid ${s.border}` }}
           >
-            {result.status === 'pass'
-              ? <CheckCircle size={18} style={{ color: '#4ade80' }} />
-              : <XCircle    size={18} style={{ color: '#f87171' }} />
-            }
-            <span className="font-medium text-sm" style={{ color: result.status === 'pass' ? '#4ade80' : '#f87171' }}>
-              {result.status === 'pass' ? 'Minden ellenőrzés sikeres' : 'Ellenőrzés hibával zárult'}
+            <span style={{ color: s.color }}>{s.icon}</span>
+            <span className="font-semibold text-sm tracking-wider" style={{ color: s.color }}>
+              {s.label}
             </span>
             <span className="ml-auto text-xs" style={{ color: '#5A5850' }}>
               {(result.duration_ms / 1000).toFixed(1)}s
             </span>
           </div>
 
-          {COMMANDS.map(({ key, label }) => (
-            <CmdBlock key={key} label={label} result={result[key] as CmdResult} />
-          ))}
+          {/* Typecheck */}
+          <CmdBlock
+            label="npm run typecheck"
+            result={result.typecheck}
+            status={stepStatus(result.typecheck.ok)}
+          />
+
+          {/* Lint */}
+          <CmdBlock
+            label="npm run lint"
+            result={result.lint}
+            status={lintStepStatus(result.lintStatus)}
+          />
+
+          {/* Build */}
+          <CmdBlock
+            label="npm run build"
+            result={result.build}
+            status={stepStatus(result.build.ok)}
+          />
         </div>
       )}
     </div>
