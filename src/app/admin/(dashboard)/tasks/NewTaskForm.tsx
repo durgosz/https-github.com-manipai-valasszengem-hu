@@ -20,10 +20,11 @@ export default function NewTaskForm() {
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
+    const form = e.currentTarget
     setPending(true)
     try {
-      await createTask(new FormData(e.currentTarget))
-      e.currentTarget.reset()
+      await createTask(new FormData(form))
+      form.reset()
       setOpen(false)
       router.refresh()
     } finally {
