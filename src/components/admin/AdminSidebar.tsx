@@ -14,6 +14,7 @@ import {
   ShieldCheck,
   ScrollText,
   Bot,
+  Users,
 } from 'lucide-react'
 
 const navItems = [
@@ -23,6 +24,7 @@ const navItems = [
   { href: '/admin/blog', icon: BookOpen, label: 'Blog', short: 'Blog', exact: false },
   { href: '/admin/design', icon: Palette, label: 'Design', short: 'Design', exact: false },
   { href: '/admin/mira', icon: Sparkles, label: 'Mira AI', short: 'Mira', exact: false },
+  { href: '/admin/leo', icon: Users, label: 'Leo CRM', short: 'Leo', exact: false },
   { href: '/admin/audit-log', icon: ScrollText, label: 'Audit napló', short: 'Audit', exact: false },
   { href: '/admin/mfa-setup', icon: ShieldCheck, label: '2FA beállítás', short: '2FA', exact: false },
   { href: '/admin/smoke-test', icon: FlaskConical, label: 'Smoke Test', short: 'Test', exact: false },

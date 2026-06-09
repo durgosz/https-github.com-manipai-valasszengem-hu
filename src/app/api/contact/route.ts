@@ -124,6 +124,25 @@ export async function POST(request: NextRequest) {
     if (error) {
       console.error('[Supabase error]', error)
     }
+
+    // Leo CRM: lead mentés
+    const notes = [
+      message ? `Üzenet: ${message.trim()}` : null,
+      preferredTime ? `Kívánt időpont: ${preferredTime.trim()}` : null,
+    ].filter(Boolean).join('\n') || null
+
+    const { error: leadError } = await supabase.from('leads').insert([{
+      name:   name.trim(),
+      email:  email.trim().toLowerCase(),
+      phone:  phone?.trim() || null,
+      source: 'contact_form',
+      status: 'NEW',
+      notes,
+    }])
+
+    if (leadError) {
+      console.error('[Leo CRM] lead mentés hiba:', leadError)
+    }
   } catch (err) {
     console.error('[Supabase unreachable]', err)
   }
