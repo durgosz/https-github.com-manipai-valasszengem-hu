@@ -15,20 +15,22 @@ import {
   ScrollText,
   Bot,
   Users,
+  ClipboardList,
 } from 'lucide-react'
 
 const navItems = [
-  { href: '/admin', icon: LayoutGrid, label: 'Áttekintés', short: 'Kezdő', exact: true },
-  { href: '/admin/pages', icon: FileText, label: 'Oldalak', short: 'Oldalak', exact: false },
-  { href: '/admin/images', icon: ImageIcon, label: 'Képek', short: 'Képek', exact: false },
-  { href: '/admin/blog', icon: BookOpen, label: 'Blog', short: 'Blog', exact: false },
-  { href: '/admin/design', icon: Palette, label: 'Design', short: 'Design', exact: false },
-  { href: '/admin/mira', icon: Sparkles, label: 'Mira AI', short: 'Mira', exact: false },
-  { href: '/admin/leo', icon: Users, label: 'Leo CRM', short: 'Leo', exact: false },
-  { href: '/admin/audit-log', icon: ScrollText, label: 'Audit napló', short: 'Audit', exact: false },
-  { href: '/admin/mfa-setup', icon: ShieldCheck, label: '2FA beállítás', short: '2FA', exact: false },
-  { href: '/admin/smoke-test', icon: FlaskConical, label: 'Smoke Test', short: 'Test', exact: false },
-  { href: '/admin/rex', icon: Bot, label: 'Rex QA', short: 'Rex', exact: false },
+  { href: '/admin',            icon: LayoutGrid,    label: 'Áttekintés',    short: 'Kezdő',    exact: true  },
+  { href: '/admin/pages',      icon: FileText,       label: 'Oldalak',       short: 'Oldalak',  exact: false },
+  { href: '/admin/images',     icon: ImageIcon,      label: 'Képek',         short: 'Képek',    exact: false },
+  { href: '/admin/blog',       icon: BookOpen,       label: 'Blog',          short: 'Blog',     exact: false },
+  { href: '/admin/design',     icon: Palette,        label: 'Design',        short: 'Design',   exact: false },
+  { href: '/admin/mira',       icon: Sparkles,       label: 'Mira AI',       short: 'Mira',     exact: false },
+  { href: '/admin/leo',        icon: Users,          label: 'Leo CRM',       short: 'Leo',      exact: false },
+  { href: '/admin/tasks',      icon: ClipboardList,  label: 'Zara Tasks',    short: 'Tasks',    exact: false },
+  { href: '/admin/audit-log',  icon: ScrollText,     label: 'Audit napló',   short: 'Audit',    exact: false },
+  { href: '/admin/mfa-setup',  icon: ShieldCheck,    label: '2FA beállítás', short: '2FA',      exact: false },
+  { href: '/admin/smoke-test', icon: FlaskConical,   label: 'Smoke Test',    short: 'Test',     exact: false },
+  { href: '/admin/rex',        icon: Bot,            label: 'Rex QA',        short: 'Rex',      exact: false },
 ]
 
 export default function AdminSidebar({ userEmail }: { userEmail: string }) {
